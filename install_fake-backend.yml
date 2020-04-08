@@ -1,0 +1,29 @@
+---
+- name: install docker and git
+  hosts: build preprod prod
+  #  gather_facts: False
+  become: true
+  vars_files:
+    - "files/secrets/devops.yml"
+  vars:
+    pip_install_packages:
+      - name: docker
+  pre_tasks:
+    - block:
+      - name: Install EPEL repo
+        package: name=epel-release state=present
+        when: ansible_distribution == "CentOS"
+
+      - name: install python-pip
+        package: name=python-pip state=present update_cache=yes
+
+      - name: install git
+        package: name=git state=present
+      tags:
+        - always
+
+  roles:
+    - { role: geerlingguy.pip, tags: [ always ] }
+    - { role: geerlingguy.docker, tags: [ always ] }
+    - { role: fake-backend }
+

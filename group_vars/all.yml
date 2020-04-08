@@ -1,0 +1,29 @@
+---
+fake_backend_source_repo: "ssh://git@ec2-54-208-88-125.compute-1.amazonaws.com:2222/samiamoura/fake-backend-dev.git"
+fake_backend_source_branch: "master"
+fake_backend_image_tag: "gitlabCICD"
+fake_backend_dest_repo: "fake-backend-cicd"
+
+gitlab_container_registry_name : "gitlab.samiamoura.com"
+
+home: "/home/centos"
+volume_database: "/srv/db-data"
+
+ip_addr_server_gitlab: "54.208.88.125"
+dns_addr_server_gitlab: "ec2-54-208-88-125.compute-1.amazonaws.com"
+ip_addr_preprod: "54.196.83.143"
+ip_addr_prod: "54.80.102.34"
+port_app: "8181"
+
+#secret data vaulted
+github_private_key: "{{ vault_github_private_key }}"
+gitlab_private_key: "{{ vault_gitlab_private_key }}"
+certificate_domaine: "{{ vault_cacrt_file }}"
+
+
+docker_hub_login: "{{ vault_docker_hub_login }}"
+docker_hub_email: "{{ vault_docker_hub_email }}"
+docker_hub_password: "{{ vault_docker_hub_password }}"
+
+gitlab_container_registry_username: "{{ vault_container_registry_gitlab_username }}"
+gitlab_container_registry_password: "{{ vault_container_registry_gitlab_password }}"

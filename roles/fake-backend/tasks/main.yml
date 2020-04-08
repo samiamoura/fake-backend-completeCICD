@@ -1,0 +1,160 @@
+---
+# This playbook is used to deploy fake-backend application based on Docker
+
+- name: Create certs.d directory to store domain certs login GitLab Container registry
+  file:
+    path: /etc/docker/certs.d
+    state: directory
+    mode: '0755'
+  tags:
+    - build
+    - preprod
+    - prod
+
+- name: Create domain directory to store certs domain file
+  file:
+    path: "/etc/docker/certs.d/{{ dns_addr_server_gitlab }}"
+    state: directory
+    mode: '0755'
+  tags:
+    - build
+    - preprod
+    - prod
+
+- name: Copy ca.crt file with owner and permissions
+  copy:
+    content: "{{ certificate_domaine }}"
+    dest: "/etc/docker/certs.d/{{ dns_addr_server_gitlab }}/ca.crt"
+    owner: root
+  tags:
+    - build
+    - preprod
+    - prod
+
+# build and push builded images
+
+- name: Log into GitLab Container Registry
+  docker_login:
+    registry: "{{ dns_addr_server_gitlab }}"
+    username: "{{ gitlab_container_registry_username }}"
+    password: "{{ gitlab_container_registry_password }}"
+    reauthorize: yes
+  tags:
+    - build
+    - preprod
+    - prod
+
+- name: create project directory
+  file:
+    path: "{{ home }}/application-battleboat"
+    state: directory
+  tags:
+    - build
+    - preprod
+    - prod
+
+- name: copy devops private key file
+  copy:
+    content: '{{ gitlab_private_key }}'
+    dest: "{{ home }}/.ssh/id_rsa"
+    owner: centos
+  tags:
+    - build
+    - preprod
+    - prod
+
+- name: Retrieve fakebackend addons source code
+  git:
+    repo: "{{ fake_backend_source_repo }}"
+    dest: "{{ home }}/application-battleboat"
+    accept_hostkey: yes
+    force: yes
+    recursive: no
+    key_file: "{{ home }}/.ssh/id_rsa"
+    version: "{{ fake_backend_source_branch }}"
+  tags:
+    - build
+    - preprod
+    - prod
+
+- name: Build image and push it to Docker Hub
+  docker_image:
+    path: "{{ home }}/application-battleboat/fake-backend"
+    name: "{{ dns_addr_server_gitlab }}/{{ gitlab_container_registry_username }}/{{ fake_backend_dest_repo }}/fake-backend"
+    push: yes
+    tag: "{{ fake_backend_image_tag }}"
+  tags:
+    - build
+
+
+- name: Remove image on build host
+  docker_image:
+    state: absent
+    name: "{{ dns_addr_server_gitlab }}/{{ gitlab_container_registry_username }}/{{ fake_backend_dest_repo }}/fake-backend"
+    tag: "{{ fake_backend_image_tag }}"
+  tags:
+    - build
+
+- name: create volume database
+  file:
+    path: "{{ volume_database }}"
+    state: directory
+  tags:
+    - preprod
+    - prod
+
+# docker network
+- name: Create docker network to interconnect containers
+  docker_network:
+    name: battleboat
+  tags:
+    - preprod
+    - prod
+
+# deploy application
+- name: Deploy database
+  docker_container:
+    name: "db-samiamr"
+    hostname: "db-samiamr"
+    image: "mysql:5.7"
+    state: "started"
+    restart_policy: "always"
+    volumes:
+      - "{{ volume_database }}:/var/lib/mysql"
+    env:
+      MYSQL_ROOT_PASSWORD: "root-samiamr"
+      MYSQL_DATABASE: "battleboat"
+      MYSQL_USER: "battleuser"
+      MYSQL_PASSWORD: "battlepass"
+    networks:
+      - name: "battleboat"
+    ports:
+      - "3306:3306"
+  tags:
+    - preprod
+    - prod
+
+# deploy frontend
+
+- name: Deploy frontend
+  docker_container:
+    name: "battle-samiamr"
+    hostname: "battle-samiamr"
+    image: "{{ dns_addr_server_gitlab }}/{{ gitlab_container_registry_username }}/{{ fake_backend_dest_repo }}/fake-backend:{{ fake_backend_image_tag }}"
+    state: "started"
+    restart_policy: "always"
+    networks:
+      - name: "battleboat"
+    volumes:
+      - "{{ home }}/application-battleboat/battleboat:/etc/backend/static"
+    env:
+      DATABASE_HOST: "db-samiamr"
+      DATABASE_PORT: "3306"
+      DATABASE_USER: "battleuser"
+      DATABASE_PASSWORD: "battlepass"
+      DATABASE_NAME: "battleboat"
+    ports:
+      - "8181:3000"
+  tags:
+    - preprod
+    - prod
