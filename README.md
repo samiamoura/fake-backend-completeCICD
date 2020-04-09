@@ -80,6 +80,7 @@ On the **”Master”** branch:
   + Notification on Slack of the result of this pipeline.
 
 #### Workflow Diagram
+------------
 
 ![worflow schem](https://user-images.githubusercontent.com/58267422/78931898-e9916080-7aa6-11ea-8545-419e990b95de.png)
 
