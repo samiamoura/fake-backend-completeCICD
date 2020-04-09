@@ -1,13 +1,10 @@
 # Project fake-backend : Full integration chain
-=============
 
 ## Build status (badge)
--------------
 
 [![Build Status](http://ec2-54-208-88-125.compute-1.amazonaws.com:8080/buildStatus/icon?job=fack-backend-CICD)](http://ec2-54-208-88-125.compute-1.amazonaws.com:8080/job/fack-backend-CICD/)
 
 ## Tools 
--------------
 
 * AWS and CloudFormation 
 * Docker, Docker-compose 
@@ -36,7 +33,7 @@ We wanted to reproduce an enterprise-type infrastructure with 4 servers:
 #### Infrastructure Diagram
 
 
-schema here 
+![infra shcem](https://user-images.githubusercontent.com/58267422/78931750-b0f18700-7aa6-11ea-812f-27b436758366.png)
 
 
 ### Choice and description of tools
@@ -84,7 +81,7 @@ On the **”Master”** branch:
 
 #### Workflow Diagram
 
-schema here 
+![worflow schem](https://user-images.githubusercontent.com/58267422/78931898-e9916080-7aa6-11ea-8545-419e990b95de.png)
 
 
 ### Technical word
