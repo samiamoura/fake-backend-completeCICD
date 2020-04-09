@@ -83,6 +83,7 @@ On the **”Master”** branch:
 
 ![worflow schem](https://user-images.githubusercontent.com/58267422/78931898-e9916080-7aa6-11ea-8545-419e990b95de.png)
 
+------------
 
 ### Technical word
 
