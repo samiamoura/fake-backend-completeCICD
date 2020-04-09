@@ -22,7 +22,7 @@ The objective of this project is to deploy the web application [battleboat.js](h
 In this project, the problems of businesses, related to storage, to the control of their data and processes were taken into account.
 
 ### Infrastructure
---------------------------
+##
 
 #### Description
  
