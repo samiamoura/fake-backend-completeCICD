@@ -15,9 +15,8 @@
 
 ## Project 
 
-### + The context
+### The context
                 
-
 The objective of this project is to deploy the web application [battleboat.js](https://github.com/billmei/battleboat "battleboat.js") by creating a complete DevOps-like integration chain. For this application to be functional, it is necessary to deploy a MySQL database (backend) and a frontend.
 In this project, the problems of businesses, related to storage, to the control of their data and processes were taken into account.
 
@@ -38,7 +37,6 @@ We wanted to reproduce an enterprise-type infrastructure with 4 servers:
 
 
 ### Choice and description of tools
---------------------------
 
 + Infrastructure deployed on the AWS cloud provider thanks to CloudFormation in order to favor IaC.
 + Deployment of a containerized GitLab CE instance and activation of the container registry in order to maintain mastery and control of data.
@@ -53,11 +51,10 @@ We wanted to reproduce an enterprise-type infrastructure with 4 servers:
 + Generation of badges to inform employees
 
 ### Workflow
---------------------------
 
 #### Description
 
-+ On the **“dev”** branch:
+On the **“dev”** branch:
 
 + Development code update via git,
  + Triggering of the first pipeline thanks to the push trigger and the webhook sent to Jenkins:
