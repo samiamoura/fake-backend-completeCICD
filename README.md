@@ -57,27 +57,27 @@ We wanted to reproduce an enterprise-type infrastructure with 4 servers:
 On the **“dev”** branch:
 
 + Development code update via git,
- + Triggering of the first pipeline thanks to the push trigger and the webhook sent to Jenkins:
- + Analysis / linter and tests of the syntax of GO, Dockerfile and docker-compose files (rest line)
- + Notification on Slack of the result of this pipeline
+  + Triggering of the first pipeline thanks to the push trigger and the webhook sent to Jenkins:
+  + Analysis / linter and tests of the syntax of GO, Dockerfile and docker-compose files (rest line)
+  + Notification on Slack of the result of this pipeline
 
 + If the pipeline is successful, triggering and automatic execution of another pipeline thanks to the success of the first:
- + Analysis / linter and tests of the syntax of mardown, bash, yml files and also of the Ansible syntax
- + Configuration of the environment on the build server, then build and test our artifact (Docke image) on the server. Push our image on our container registry GitLab. Cleaning up the build environment.
- + On the staging server, configuration of the environment, recovery of the necessary sources and deployment of our application in an environment close to production,
- + Several tests of the proper functioning of the application (web services and database)
- + Notification on Slack of the result of this pipeline
+  + Analysis / linter and tests of the syntax of mardown, bash, yml files and also of the Ansible syntax
+  + Configuration of the environment on the build server, then build and test our artifact (Docke image) on the server. Push our image on our container registry GitLab. Cleaning up the build environment.
+  + On the staging server, configuration of the environment, recovery of the necessary sources and deployment of our application in an environment close to production,
+  + Several tests of the proper functioning of the application (web services and database)
+  + Notification on Slack of the result of this pipeline
 
 + If the pipeline is successful, set up a Pull Request for a manager to check all the pipelines and that they are working properly.
 The manager decides to accept the Pull Request and therefore merge the "dev" branch on the "master" branch to deploy the application in production.
 
 On the **”Master”** branch:
 + A new pipeline is triggered and executed automatically after the Merge Request:
- + Analysis / linter and tests of the syntax of mardown, bash, yml files and also of the Ansible syntax
- + The build and staging steps are voluntarily forgotten,
- + On the production server, configuration of the environment, recovery of the necessary sources and deployment of our application in the production environment
- + Several tests of the proper functioning of the application in production (web services and database)
- + Notification on Slack of the result of this pipeline.
+  + Analysis / linter and tests of the syntax of mardown, bash, yml files and also of the Ansible syntax
+  + The build and staging steps are voluntarily forgotten,
+  + On the production server, configuration of the environment, recovery of the necessary sources and deployment of our application in the production environment
+  + Several tests of the proper functioning of the application in production (web services and database)
+  + Notification on Slack of the result of this pipeline.
 
 #### Workflow Diagram
 
