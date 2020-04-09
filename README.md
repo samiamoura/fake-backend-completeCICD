@@ -15,14 +15,13 @@
 
 ## Project 
 
-### The context
+### + The context
                 
 
 The objective of this project is to deploy the web application [battleboat.js](https://github.com/billmei/battleboat "battleboat.js") by creating a complete DevOps-like integration chain. For this application to be functional, it is necessary to deploy a MySQL database (backend) and a frontend.
 In this project, the problems of businesses, related to storage, to the control of their data and processes were taken into account.
 
 ### Infrastructure
-##
 
 #### Description
  
@@ -89,12 +88,10 @@ On the **”Master”** branch:
 
 
 ### Technical word
---------------------------
 
 Docker, docker-compose, Ansible, Tags, Playbooks, Roles, Galaxy, Jenkins, Shared-library, Pipeline, Notification, linter
 
 ### Reference repository
---------------------------
 
 + [Source code development](https://github.com/samiamoura/fake-backend-continuousIntegration.git "Source code development")
 + [Shared-library](https://github.com/samiamoura/shared-library.git "Shared-library")
