@@ -1,0 +1,323 @@
+AWSTemplateFormatVersion: '2010-09-09' 
+
+Metadata:
+  License: Apache-2.0
+
+Description: 'AWS CloudFormation Sample Template EC2InstanceWithSecurityGroupSample:
+  Create an Amazon EC2 instance running the Amazon Linux AMI. The AMI is chosen based
+  on the region in which the stack is run. This example creates an EC2 security group
+  for the instance to give you SSH access. **WARNING** This template creates an Amazon
+  EC2 instance. You will be billed for the AWS resources used if you create a stack
+  from this template.'
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+    Default: devops
+  
+  InstanceTypeGitLabJenkins:
+    Description: GitLab Jenkins EC2 instance type
+    Type: String
+    Default: t2.medium
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
+      c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge, c5.9xlarge,
+      g3.8xlarge,
+      r5.large, r5.xlarge, r5.2xlarge, r5.4xlarge, r3.12xlarge,
+      i3.xlarge, i3.2xlarge, i3.4xlarge, i3.8xlarge,
+      d2.xlarge, d2.2xlarge, d2.4xlarge, d2.8xlarge]
+    ConstraintDescription: must be a valid EC2 instance type.
+ 
+  InstanceTypeRemoteServerGitlabJenkins:
+    Description: Remote server EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+      t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, t3.2xlarge,
+      m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
+      c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge, c5.9xlarge,
+      g3.8xlarge,
+      r5.large, r5.xlarge, r5.2xlarge, r5.4xlarge, r3.12xlarge,
+      i3.xlarge, i3.2xlarge, i3.4xlarge, i3.8xlarge,
+      d2.xlarge, d2.2xlarge, d2.4xlarge, d2.8xlarge]
+    ConstraintDescription: must be a valid EC2 instance type.  
+  
+  SSHLocation:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 0.0.0.0/0
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x. 
+
+  ImageTypeGitlabJenkins:
+    Description: Image type for GitLab-Jenkins server
+    Default: "Debian GNU/Linux 9 (stretch) - ami-003f19e0e687de1cd"
+    Type: String
+    AllowedValues: 
+      - "Debian GNU/Linux 9 (stretch) - ami-003f19e0e687de1cd"
+      - "CentOS Linux 7 (Core) - ami-0083662ba17882949"
+    ConstraintDescription: must specify debian or centos
+  
+  ImageTypeRemoteServerGitlabJenkins:
+    Description: Image type for Remote Server
+    Default: "Debian GNU/Linux 9 (stretch) - ami-003f19e0e687de1cd"
+    Type: String
+    AllowedValues: 
+      - "Debian GNU/Linux 9 (stretch) - ami-003f19e0e687de1cd"
+      - "CentOS Linux 7 (Core) - ami-0083662ba17882949"
+    ConstraintDescription: must specify debian or centos
+
+Conditions:
+  DebianImage: !Equals [!Ref ImageTypeGitlabJenkins, "Debian GNU/Linux 9 (stretch) - ami-003f19e0e687de1cd"]
+  CentosImage: !Equals [!Ref ImageTypeGitlabJenkins, "CentOS Linux 7 (Core) - ami-0083662ba17882949"]
+  DebianImageRemote: !Equals [!Ref ImageTypeRemoteServerGitlabJenkins, "Debian GNU/Linux 9 (stretch) - ami-003f19e0e687de1cd"]
+  CentosImageRemote: !Equals [!Ref ImageTypeRemoteServerGitlabJenkins, "CentOS Linux 7 (Core) - ami-0083662ba17882949"]  
+  
+Resources:
+  GitLabJenkinsServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+       - Key: Name
+         Value: 'GitLabJenkinsServer'
+      InstanceType: !Ref 'InstanceTypeGitLabJenkins'
+      SecurityGroups: [!Ref 'InstanceSecurityGroupGitLabJenkinsServer']
+      BlockDeviceMappings:
+      #Mount path volume for CentOS image ( ImageId: 'ami-0083662ba17882949' ) -->   - DeviceName: /dev/sda1
+      #Mount path volume for Debian image  ( ImageId: 'ami-003f19e0e687de1cd' )  -->    - DeviceName: xvda
+        - DeviceName: 
+            !If [DebianImage, xvda, !If [CentosImage, /dev/sda1, ' ']]
+          Ebs:
+            VolumeSize: 20 
+            DeleteOnTermination: true     
+      ImageId:
+        !If [DebianImage, 'ami-003f19e0e687de1cd', !If [CentosImage, 'ami-0083662ba17882949', ' ']]
+      KeyName: !Ref 'KeyName'
+      UserData:
+        'Fn::Base64': !Join
+          - ''
+          - - !Sub |
+              #!/bin/sh
+              echo "deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main" >> /etc/apt/sources.list
+              apt-get update
+              apt-get -y install dirmngr --install-recommends
+              apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
+              apt update
+              apt -y install ansible
+
+              # retrive ansible code
+              apt -y install git
+              git clone https://github.com/diranetafen/cursus-devops.git
+              cd cursus-devops/ansible
+              ansible-galaxy install -r roles/requirements.yml
+              ansible-playbook install_docker.yml
+              usermod -aG docker admin
+                
+              #before install gitlab-ci we get the punlic dns
+            - |
+              GITLAB_EXTERNAL_HOSTNAME=`curl http://169.254.169.254/latest/meta-data/public-hostname`
+              mkdir -p  /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME
+              mkdir -p /opt/gitlab/cert/
+              
+              #Generate selfsigned cert and key 
+              sudo echo -e "\n\n\n\n\n"$GITLAB_EXTERNAL_HOSTNAME"\n" | openssl req -newkey rsa:4096 -nodes -sha256 -keyout /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.key -x509 -days 365 -out /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.crt
+               
+               #Chnage rulf for .crt and .key files 
+               chmod 600 /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.key
+               chmod 600 /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.crt
+               
+               cp /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.key /opt/gitlab/cert/$GITLAB_EXTERNAL_HOSTNAME.key
+               cp /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.crt /opt/gitlab/cert/$GITLAB_EXTERNAL_HOSTNAME.crt
+                            
+              ansible-playbook install_gitlab_ci.yml --extra-var "gitlab_external_hostname=${GITLAB_EXTERNAL_HOSTNAME}"
+              
+              rm -f /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.key
+              mv /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/$GITLAB_EXTERNAL_HOSTNAME.crt /etc/docker/certs.d/$GITLAB_EXTERNAL_HOSTNAME/ca.crt
+              
+              # Disable ssh timer
+              sudo echo 'ClientAliveInterval 4' >> /etc/ssh/sshd_config
+              sudo echo 'ClientAliveCountMax 22' >> /etc/ssh/sshd_config
+              sudo systemctl restart sshd
+              
+              #install Jenkins
+               cd ../jenkins
+               docker-compose up -d
+
+  InstanceSecurityGroupGitLabJenkinsServer:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
+       - Key: Name
+         Value: 'Rules GitLabJenkinsServer'
+      GroupDescription: Enable SSH access via port 22, 80, 8080, 8443 and 2222
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 8443
+        ToPort: 8443
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 2222
+        ToPort: 2222
+        CidrIp: !Ref 'SSHLocation'
+  
+  ServerBuildGitlabJenkins:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+       - Key: Name
+         Value: 'ServerBuildGitlabJenkins'
+      InstanceType: !Ref 'InstanceTypeRemoteServerGitlabJenkins'
+      SecurityGroups: [!Ref 'InstanceSecurityGroupServerBuildGitlabJenkins']
+      KeyName: !Ref 'KeyName'
+      ImageId:
+        !If [DebianImageRemote, 'ami-003f19e0e687de1cd', !If [CentosImageRemote, 'ami-0083662ba17882949', ' ']]        
+      UserData:
+        'Fn::Base64':
+          !Sub |
+            #!/bin/bash
+          
+            # Desactivate ssh timer
+            sudo echo 'ClientAliveInterval 4' >> /etc/ssh/sshd_config
+            sudo echo 'ClientAliveCountMax 22' >> /etc/ssh/sshd_config
+            sudo systemctl restart sshd
+          
+            # Activate line numer editor vim
+            sudo echo 'set nocompatible' > ~/.vimrc
+            sudo echo 'set number' >> ~/.vimrc
+
+  InstanceSecurityGroupServerBuildGitlabJenkins:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
+       - Key: Name
+         Value: 'Security Rules for Build servers'
+      GroupDescription: Enable SSH access via port 22 and 80
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref 'SSHLocation'  
+ 
+  ServerPreprodGitlabJenkins:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+       - Key: Name
+         Value: 'ServerPreprodGitlabJenkins'
+      InstanceType: !Ref 'InstanceTypeRemoteServerGitlabJenkins'
+      SecurityGroups: [!Ref 'InstanceSecurityGroupServerDeploymentGitlabJenkins']
+      KeyName: !Ref 'KeyName'
+      ImageId:
+        !If [DebianImageRemote, 'ami-003f19e0e687de1cd', !If [CentosImageRemote, 'ami-0083662ba17882949', ' ']] 
+      UserData:
+        'Fn::Base64':
+          !Sub |
+            #!/bin/bash
+          
+            # Desactivate ssh timer
+            sudo echo 'ClientAliveInterval 4' >> /etc/ssh/sshd_config
+            sudo echo 'ClientAliveCountMax 22' >> /etc/ssh/sshd_config
+            sudo systemctl restart sshd
+          
+            # Activate line numer editor vim
+            sudo echo 'set nocompatible' > ~/.vimrc
+            sudo echo 'set number' >> ~/.vimrc
+ 
+  ServerProductionGitlabJenkins:
+    Type: AWS::EC2::Instance
+    Properties:
+      Tags:
+       - Key: Name
+         Value: 'ServerProductionGitlabJenkins'
+      InstanceType: !Ref 'InstanceTypeRemoteServerGitlabJenkins'
+      SecurityGroups: [!Ref 'InstanceSecurityGroupServerDeploymentGitlabJenkins']
+      KeyName: !Ref 'KeyName'
+      ImageId:
+        !If [DebianImageRemote, 'ami-003f19e0e687de1cd', !If [CentosImageRemote, 'ami-0083662ba17882949', ' ']] 
+      UserData:
+        'Fn::Base64':
+          !Sub |
+            #!/bin/bash
+            
+            # Desactivate ssh timer
+            sudo echo 'ClientAliveInterval 4' >> /etc/ssh/sshd_config
+            sudo echo 'ClientAliveCountMax 22' >> /etc/ssh/sshd_config
+            sudo systemctl restart sshd
+          
+            # Activate line number editor vim
+            sudo echo 'set nocompatible' > ~/.vimrc
+            sudo echo 'set number' >> ~/.vimrc
+   
+  InstanceSecurityGroupServerDeploymentGitlabJenkins:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
+       - Key: Name
+         Value: 'Security Rules for PreProd and Production servers'
+      GroupDescription: Enable SSH access via port 22,80 and 8181
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref 'SSHLocation'
+      - IpProtocol: tcp
+        FromPort: 8181
+        ToPort: 8181
+        CidrIp: !Ref 'SSHLocation'
+
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value: !Ref 'GitLabJenkinsServer'
+    Value: !Ref 'ServerBuildGitlabJenkins'
+    Value: !Ref 'ServerPreprodGitlabJenkins'
+    Value: !Ref 'ServerProductionGitlabJenkins'
+  AZ:
+    Description: Availability Zone of the newly created EC2 instance
+    Value: !GetAtt [GitLabJenkinsServer, AvailabilityZone]
+    Value: !GetAtt [ServerBuildGitlabJenkins, AvailabilityZone]
+    Value: !GetAtt [ServerPreprodGitlabJenkins, AvailabilityZone]
+    Value: !GetAtt [ServerProductionGitlabJenkins, AvailabilityZone]
+  PublicDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value: !GetAtt [GitLabJenkinsServer, PublicDnsName]
+    Value: !GetAtt [ServerBuildGitlabJenkins, PublicDnsName]
+    Value: !GetAtt [ServerPreprodGitlabJenkins, PublicDnsName]
+    Value: !GetAtt [ServerProductionGitlabJenkins, PublicDnsName]
+  PublicIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value: !GetAtt [GitLabJenkinsServer, PublicIp]
+    Value: !GetAtt [ServerBuildGitlabJenkins, PublicIp]
+    Value: !GetAtt [ServerPreprodGitlabJenkins, PublicIp]
+    Value: !GetAtt [ServerProductionGitlabJenkins, PublicIp]
